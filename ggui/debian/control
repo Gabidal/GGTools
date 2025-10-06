@@ -1,0 +1,28 @@
+Source: ggui
+Section: libs
+Priority: optional
+Maintainer: Gabriel Golzar <golzar.gabriel@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ meson,
+ ninja-build,
+ pkg-config,
+ g++,
+ python3
+Standards-Version: 4.7.0
+Homepage: https://github.com/Gabidal/GGUI
+Vcs-Git: https://github.com/Gabidal/GGUI.git
+Vcs-Browser: https://github.com/Gabidal/GGUI
+Rules-Requires-Root: no
+
+
+Package: libggui-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Provides: ggui-dev
+Description: terminal UI library for Meson-based vendoring (development files)
+ GGUI is a cross-platform terminal user interface toolkit written in C++17.
+ This development package ships the headers, static archive, and tooling
+ necessary to vendor GGUI into downstream projects built with Meson.

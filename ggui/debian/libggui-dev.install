@@ -1,0 +1,8 @@
+# headers generated via the meson export targets; staged under usr/include/ggui
+usr/include/ggui/*.h
+
+# static archive produced from build_native_archive target and renamed to libggui.a
+usr/lib/${DEB_HOST_MULTIARCH}/libggui.a
+
+# pkg-config metadata for vendoring convenience
+usr/lib/${DEB_HOST_MULTIARCH}/pkgconfig/libggui.pc

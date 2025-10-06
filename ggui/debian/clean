@@ -1,0 +1,4 @@
+debian/build*/
+debian/tmp*/
+debian/config.cache
+bin/export/
