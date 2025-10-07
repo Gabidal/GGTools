@@ -1,0 +1,5 @@
+ggui (0.1.8.1-1) unstable; urgency=medium
+
+  * Initial packaging using project build scripts.
+
+ -- Gabriel Golzar <golzar.gabriel@gmail.com>  Tue, 07 Oct 2025 12:00:00 +0000

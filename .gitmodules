@@ -1,6 +1,6 @@
-[submodule "modules/GGUI"]
-	path = modules/GGUI
-	url = https://github.com/Gabidal/GGUI
-[submodule "modules/GGDirect"]
-	path = modules/GGDirect
+[submodule "modules/ggdirect"]
+	path = modules/ggdirect
 	url = https://github.com/Gabidal/GGDirect
+[submodule "modules/ggui"]
+	path = modules/ggui
+	url = https://github.com/Gabidal/GGUI

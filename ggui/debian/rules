@@ -5,56 +5,30 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 include /usr/share/dpkg/default.mk
 
-BUILD_DIR := $(CURDIR)/bin/obj-$(DEB_HOST_GNU_TYPE)
-EXPORT_DIR := $(CURDIR)/bin/export
+MODULES_DIR := $(CURDIR)/../modules/ggui
+BIN_DIR := $(MODULES_DIR)/bin
+EXPORT_DIR := $(BIN_DIR)/export
 DESTDIR := $(CURDIR)/debian/tmp
+GGUI_VERSION := $(shell sed -n "s/.*version[[:space:]]*:[[:space:]]*'\(.*\)'.*/\1/p" $(BIN_DIR)/meson.build | head -n1)
 
 %:
 	dh $@
 
 override_dh_auto_configure:
-	meson setup $(BUILD_DIR) $(CURDIR)/bin \
-		--prefix=/usr \
-		--libdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
-		--includedir=/usr/include \
-		--buildtype=release
+	cd $(BIN_DIR) && ./init.sh
 
 override_dh_auto_build:
-	meson compile -C $(BUILD_DIR)
+	cd $(BIN_DIR) && ./export.sh
 
 override_dh_auto_install:
-	# Ensure the optional developer header is generated alongside the default export
-	meson compile -C $(BUILD_DIR) generate_dev_header
 	install -d $(DESTDIR)/usr/include/ggui
-	for header in GGUI.h GGUIDev.h; do \
-		if [ -f $(EXPORT_DIR)/$$header ]; then \
-			lower_name=$$(printf '%s\n' "$$header" | tr '[:upper:]' '[:lower:]'); \
-			install -m 0644 $(EXPORT_DIR)/$$header $(DESTDIR)/usr/include/ggui/$$lower_name; \
-		fi; \
-	done
+	install -m644 $(EXPORT_DIR)/ggui.h $(DESTDIR)/usr/include/ggui/
+	install -m644 $(EXPORT_DIR)/ggui_dev.h $(DESTDIR)/usr/include/ggui/
 	install -d $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)
-	test -f $(EXPORT_DIR)/libGGUIUnix.a
-	install -m 0644 $(EXPORT_DIR)/libGGUIUnix.a $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/libggui.a
+	install -m644 $(EXPORT_DIR)/libggui.a $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/
 	install -d $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig
-	cat <<'EOF' > $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/libggui.pc
-prefix=/usr
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib/$(DEB_HOST_MULTIARCH)
-includedir=${prefix}/include/ggui
-
-Name: GGUI
-Description: Terminal UI library
-Version: $(DEB_VERSION_UPSTREAM)
-Libs: -L${libdir} -lggui
-Cflags: -I${includedir}
-EOF
+	printf 'prefix=/usr\nexec_prefix=$${prefix}\nlibdir=$${exec_prefix}/lib/$(DEB_HOST_MULTIARCH)\nincludedir=$${prefix}/include/ggui\n\nName: GGUI\nDescription: GGUI terminal UI toolkit\nVersion: %s\nLibs: -L$${libdir} -lggui\nCflags: -I$${includedir}\n' "$(if $(GGUI_VERSION),$(GGUI_VERSION),0.0.0)" > $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/libggui.pc
 
 override_dh_auto_clean:
-	if [ -d $(BUILD_DIR) ]; then \
-		meson --internal clean -C $(BUILD_DIR) || true; \
-		rm -rf $(BUILD_DIR); \
-	fi
-	for artifact in GGUI.h GGUIDev.h libGGUIUnix.a; do \
-		if [ -f $(EXPORT_DIR)/$$artifact ]; then rm -f $(EXPORT_DIR)/$$artifact; fi; \
-	done
-	if [ -d $(EXPORT_DIR) ]; then rm -rf $(EXPORT_DIR); fi
+	rm -rf $(BIN_DIR)/build $(BIN_DIR)/build-release $(BIN_DIR)/build-win $(BIN_DIR)/build-linux
+	rm -f $(EXPORT_DIR)/libggui.a $(EXPORT_DIR)/ggui.h $(EXPORT_DIR)/ggui_dev.h

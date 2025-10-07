@@ -1,0 +1,13 @@
+tmp
+libggui-dev
+libggdirect-dev
+.debhelper
+
+*.buildinfo
+*.changes
+*.deb
+
+files
+*.substvars
+
+*-stamp
