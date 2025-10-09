@@ -35,6 +35,11 @@ echo "=== GGTools Debian Vendor Init ==="
 echo ">>> Syncing submodules..."
 git submodule update --init --recursive
 
+# Since the submodules are following commit head instead of a branch head.
+git submodule foreach 'git checkout main || true'
+git submodule foreach 'git pull origin main'
+
+
 # Discover all modules in ./modules/
 for module_dir in $tools; do
     build_module $module_dir
