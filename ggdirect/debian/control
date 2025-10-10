@@ -1,0 +1,28 @@
+Source: ggdirect
+Section: graphics
+Priority: optional
+Maintainer: Gabriel Golzar <golzar.gabriel@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ meson,
+ ninja-build,
+ pkg-config,
+ g++,
+ python3,
+ libdrm-dev,
+ libfreetype6-dev,
+ libevdev-dev
+Standards-Version: 4.7.0
+Homepage: https://github.com/Gabidal/GGDirect
+Vcs-Git: https://github.com/Gabidal/GGDirect.git
+Vcs-Browser: https://github.com/Gabidal/GGDirect
+Rules-Requires-Root: no
+
+Package: ggdirect
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: DRM/KMS rendering backend for GGUI applications
+ GGDirect provides the DRM/KMS-based rendering backend used by
+ GGUI terminal applications. It handles framebuffer setup, input
+ multiplexing, and direct rendering for TUI environments that
+ require low-level display access without a windowing system.

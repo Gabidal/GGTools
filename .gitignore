@@ -1,13 +1,18 @@
 tmp
-libggui-dev
-libggdirect-dev
 .debhelper
 
 *.buildinfo
 *.changes
 *.deb
+*.ddeb
+*.rpm
 
 files
 *.substvars
 
 *-stamp
+
+libggui-dev
+libggdirect-dev
+
+*/debian/ggdirect

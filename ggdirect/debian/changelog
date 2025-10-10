@@ -1,0 +1,5 @@
+ggdirect (0.0.1-1) unstable; urgency=medium
+
+  * Initial Debian packaging using project build scripts.
+
+ -- Gabriel Golzar <golzar.gabriel@gmail.com>  Fri, 10 Oct 2025 12:00:00 +0000

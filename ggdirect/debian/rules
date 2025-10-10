@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE ?= 1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+include /usr/share/dpkg/default.mk
+
+MODULES_DIR := $(CURDIR)/../modules/ggdirect
+BIN_DIR := $(MODULES_DIR)/bin
+BUILD_DIR := $(BIN_DIR)/build
+DESTDIR := $(CURDIR)/debian/tmp
+BINARY_NAME := GGDirect
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	cd $(BIN_DIR) && ./init.sh
+
+override_dh_auto_build:
+	cd $(BIN_DIR) && meson compile -C build
+
+override_dh_auto_install:
+	install -d $(DESTDIR)/usr/bin
+	install -m755 $(BUILD_DIR)/$(BINARY_NAME) $(DESTDIR)/usr/bin/ggdirect
+
+override_dh_auto_clean:
+	rm -rf $(BUILD_DIR)

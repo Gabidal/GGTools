@@ -22,7 +22,8 @@ Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Provides: ggui-dev
-Description: terminal UI library for Meson-based vendoring (development files)
- GGUI is a cross-platform terminal user interface toolkit written in C++17.
- This development package ships the headers, static archive, and tooling
- necessary to vendor GGUI into downstream projects built with Meson.
+Description: Cross-platform terminal UI library for C++ (development files)
+ GGUI is a lightweight, cross-platform terminal user interface toolkit
+ written in modern C++17. This development package provides the headers,
+ static library, and pkg-config metadata required to build applications
+ that use GGUI.
