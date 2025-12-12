@@ -32,17 +32,74 @@ tools=(
     ggui
 )
 
+# Get the latest semver tag from a git repository
+# Args: $1 - path to the git repository
+secure_git_tag_order() {
+    local repo_path="$1"
+    # Filter only valid semver tags (vX.Y.Z or X.Y.Z), sort by version, get latest
+    # Note: grep returns exit code 1 when no matches, so we use || true to prevent crash with pipefail
+    git -C "$repo_path" tag --list 2>/dev/null | \
+        { grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' || true; } | \
+        sort -V | \
+        tail -n 1
+}
+
 # === Module packager ===
 build_module_to_debian() {
     local package_module_path="$1"              # The module package, usually just resides int he project root directory.
     local sub_module_path="$MODULES_DIR/$1"     # little bit confusing, but the git sub module resides inside the module dir and has name as the package.
 
     echo ">>> Updating submodule: $package_module_path"
-    git -C "$sub_module_path" pull --rebase
+    
+    # Ensure we're on main branch (not detached) so pull --rebase works
+    echo ">>> Checking out main branch for: $package_module_path"
+    git -C "$sub_module_path" checkout main
+    
+    # Pull latest changes from origin
+    echo ">>> Pulling latest changes for: $package_module_path"
+    git -C "$sub_module_path" pull --rebase origin main
 
+    # Fetch all tags from origin
+    echo ">>> Fetching tags for submodule: $package_module_path"
+    git -C "$sub_module_path" fetch --tags --prune
+
+    # Find the latest semver tag
+    local latest_tag
+    latest_tag=$(secure_git_tag_order "$sub_module_path")
+
+    # Checkout the latest tag if available (this will detach HEAD, which is expected for tags)
+    if [[ -z "$latest_tag" ]]; then
+        echo ">>> WARNING: No semver tags found for $package_module_path, staying on main branch."
+    else
+        echo ">>> Found latest tag for $package_module_path: $latest_tag"
+        echo ">>> Checking out tag: $latest_tag"
+        git -C "$sub_module_path" checkout "$latest_tag"
+    fi
+
+    # Verify GPG signature - try tag signature first, then commit signature
     echo ">>> Verifying GPG signature for: $package_module_path"
-    if ! git -C "$sub_module_path" verify-commit HEAD > /dev/null 2>&1; then
-        echo ">>> ERROR: GPG signature verification failed for $package_module_path! Stopping build to prevent supply chain attack."
+    local signature_verified=false
+    
+    # If we checked out a tag, verify the tag signature
+    if [[ -n "$latest_tag" ]]; then
+        if git -C "$sub_module_path" verify-tag "$latest_tag" >/dev/null 2>&1; then
+            echo ">>> Tag signature verified for: $latest_tag"
+            signature_verified=true
+        fi
+    fi
+    
+    # Fall back to verifying the commit signature
+    if [[ "$signature_verified" == "false" ]]; then
+        if git -C "$sub_module_path" verify-commit HEAD >/dev/null 2>&1; then
+            echo ">>> Commit signature verified for HEAD"
+            signature_verified=true
+        fi
+    fi
+
+    if [[ "$signature_verified" == "false" ]]; then
+        echo ">>> ERROR: GPG signature verification failed for $package_module_path!"
+        echo ">>> Neither tag nor HEAD commit has a valid signature."
+        echo ">>> Stopping build to prevent supply chain attack."
         exit 1
     fi
 
@@ -60,7 +117,7 @@ build_module_to_debian() {
     cd "$ROOT_DIR"
     echo ">>> Finished building $package_module_path"
 }
- 
+
 # Uses alien to re-package the deb packages into RPM packages
 build_module_to_rpm() {
     local package_module_path="$1"
@@ -122,10 +179,6 @@ echo "=== GGTools Debian Vendor Init ==="
 # Initialize submodules if needed
 echo ">>> Syncing submodules..."
 git submodule update --init --recursive
-
-# Since the submodules are following commit head instead of a branch head.
-git submodule foreach 'git checkout main || true'
-git submodule foreach 'git pull origin main'
 
 # Discover all modules in ./modules/
 for module_dir in "${tools[@]}"; do

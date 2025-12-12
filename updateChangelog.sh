@@ -39,7 +39,9 @@ parse_version_file_to_bullets() {
     local version_file="$1"
     # Extract lines starting with "- " at the beginning (no indentation), format as changelog bullets
     # Also remove any leading '#' characters from the text
+    # Skip lines ending with ':' as they introduce indented content we don't include
     grep -E '^-\s+' "$version_file" | \
+        grep -v ':$' | \
         sed -E 's/^-\s+/  * /' | \
         sed -E 's/^(\s*\*\s*)#+ */\1/' | \
         head -20  # Limit to first 20 bullet points to keep it reasonable
@@ -54,6 +56,7 @@ generate_changelog_entry() {
     local date_str
     date_str=$(date -R)
     
+    # The idea here is so that its always unstable by default, and the maintainer needs to manually read the changelogs and verify. then proceed to name it "stable" update.
     echo "${package_name} (${version}-${revision}) unstable; urgency=medium"
     echo ""
     
