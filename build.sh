@@ -18,6 +18,12 @@ build_module_to_debian() {
     echo ">>> Updating submodule: $module_name"
     git -C "$module_path" pull --rebase
 
+    echo ">>> Verifying GPG signature for: $module_name"
+    if ! git -C "$module_path" verify-commit HEAD > /dev/null 2>&1; then
+        echo ">>> ERROR: GPG signature verification failed for $module_name! Stopping build to prevent supply chain attack."
+        exit 1
+    fi
+
     echo ">>> Building Debian package for: $module_name"
     cd "$module_name"
 
