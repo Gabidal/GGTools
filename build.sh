@@ -12,7 +12,7 @@ export GNUPGHOME="$(mktemp -d)"
 trap 'rm -rf "$GNUPGHOME"' EXIT
 
 # Path to the trusted keys file
-KEYS_FILE="$ROOT_DIR/builder/KEYS"
+KEYS_FILE="$ROOT_DIR/keyring"
 
 # Fail immediately if the keys file is missing
 if [[ ! -f "$KEYS_FILE" ]]; then
