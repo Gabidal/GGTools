@@ -54,7 +54,7 @@ build_module_to_debian() {
     cd "$ROOT_DIR"
     echo ">>> Finished building $package_module_path"
 }
-
+ 
 # Uses alien to re-package the deb packages into RPM packages
 build_module_to_rpm() {
     local package_module_path="$1"
