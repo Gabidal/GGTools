@@ -5,6 +5,25 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES_DIR="$ROOT_DIR/modules"
 
+# === GPG Sandbox Setup ===
+# Create a temporary directory for the GPG keyring to ensure isolation
+export GNUPGHOME="$(mktemp -d)"
+# Ensure the temporary directory is removed when the script exits
+trap 'rm -rf "$GNUPGHOME"' EXIT
+
+# Path to the trusted keys file
+KEYS_FILE="$ROOT_DIR/builder/KEYS"
+
+# Fail immediately if the keys file is missing
+if [[ ! -f "$KEYS_FILE" ]]; then
+    echo ">>> ERROR: Trusted keys file not found at $KEYS_FILE"
+    exit 1
+fi
+
+# Import the trusted keys into the temporary keyring
+echo ">>> Importing trusted keys from $KEYS_FILE..."
+gpg --import "$KEYS_FILE"
+
 tools=(
     ggdirect
     ggui
@@ -12,20 +31,20 @@ tools=(
 
 # === Module packager ===
 build_module_to_debian() {
-    local module_name="$1"
-    local module_path="$MODULES_DIR/$module_name"
+    local package_module_path="$1"              # The module package, usually just resides int he project root directory.
+    local sub_module_path="$MODULES_DIR/$1"     # little bit confusing, but the git sub module resides inside the module dir and has name as the package.
 
-    echo ">>> Updating submodule: $module_name"
-    git -C "$module_path" pull --rebase
+    echo ">>> Updating submodule: $package_module_path"
+    git -C "$sub_module_path" pull --rebase
 
-    echo ">>> Verifying GPG signature for: $module_name"
-    if ! git -C "$module_path" verify-commit HEAD > /dev/null 2>&1; then
-        echo ">>> ERROR: GPG signature verification failed for $module_name! Stopping build to prevent supply chain attack."
+    echo ">>> Verifying GPG signature for: $package_module_path"
+    if ! git -C "$sub_module_path" verify-commit HEAD > /dev/null 2>&1; then
+        echo ">>> ERROR: GPG signature verification failed for $package_module_path! Stopping build to prevent supply chain attack."
         exit 1
     fi
 
-    echo ">>> Building Debian package for: $module_name"
-    cd "$module_name"
+    echo ">>> Building Debian package for: $package_module_path"
+    cd "$package_module_path"
 
     dh_clean || true
 
@@ -33,22 +52,22 @@ build_module_to_debian() {
     dpkg-buildpackage -us -uc -b
 
     cd "$ROOT_DIR"
-    echo ">>> Finished building $module_name"
+    echo ">>> Finished building $package_module_path"
 }
 
 # Uses alien to re-package the deb packages into RPM packages
-build_module_to_arch() {
-    local module_name="$1"
-    local module_pkg_dir="$ROOT_DIR/$module_name"
+build_module_to_rpm() {
+    local package_module_path="$1"
+    local module_pkg_dir="$ROOT_DIR/$1"
     local debian_files_list="$module_pkg_dir/debian/files"
 
     if ! command -v alien >/dev/null 2>&1; then
-        echo ">>> ERROR: alien is not installed. Skipping RPM conversion for $module_name."
+        echo ">>> ERROR: alien is not installed. Skipping RPM conversion for $package_module_path."
         return 1
     fi
 
     if [[ ! -f "$debian_files_list" ]]; then
-        echo ">>> No debian/files manifest found for $module_name. Skipping RPM conversion."
+        echo ">>> No debian/files manifest found for $package_module_path. Skipping RPM conversion."
         return 0
     fi
 
@@ -60,7 +79,7 @@ build_module_to_arch() {
     done < "$debian_files_list"
 
     if [[ ${#deb_artifacts[@]} -eq 0 ]]; then
-        echo ">>> No .deb artifacts listed for $module_name. Skipping RPM conversion."
+        echo ">>> No .deb artifacts listed for $package_module_path. Skipping RPM conversion."
         return 0
     fi
 
@@ -88,7 +107,7 @@ build_module_to_arch() {
     done
 
     cd "$ROOT_DIR"
-    echo ">>> Finished converting RPM packages for: $module_name"
+    echo ">>> Finished converting RPM packages for: $package_module_path"
 }
 
 # === Main ===
@@ -105,7 +124,7 @@ git submodule foreach 'git pull origin main'
 # Discover all modules in ./modules/
 for module_dir in "${tools[@]}"; do
     build_module_to_debian $module_dir
-    build_module_to_arch $module_dir
+    build_module_to_rpm $module_dir
 done
 
 echo "=== All modules built successfully! ==="
