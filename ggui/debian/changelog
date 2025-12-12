@@ -1,5 +1,49 @@
-ggui (0.1.8.1-1) unstable; urgency=medium
+ggui (0.1.8-1) unstable; urgency=medium
 
-  * Initial packaging using project build scripts.
+  * Input events now use IVector2 instead of Coordinate struct
+  * Many if not all classes are now written in lower camelCase
+  * Vector2 is now correctly named FVector2 for containing floating point coordinates
+  * GGUI::mouse is now an IVector2 type
+  * You can now give percentage floating point values for almost any value based styling, like width or color channel and so on...
+  * GGUI does no longer have RGBA, instead opacity is given as a single floating value per element node
+  * RGB lerp can use Gamma color correct compute for much higher cost or use cheap simple lerp formula
+  * Since most of the node structure is now given as an HTML/XML like, GGUI provides `on_init()` and other `on()` state change function handlers the user can customize
+  * `GGUI::Main` is not accessible anymore, since it was moved under `GGUI::INTERNAL::Main`, and intended for user to access through `GGUI::getRoot()`
+  * Titles are now native to element class so window class was removed
+  * Pixel based canvas has been removed, since only terminal cell based canvas is needed
+  * Button class has been removed, since normal textField with `on_click()` brings out the same behavior
+  * SwitchBoxes have now `singleSelect(true)` like styling which disables all other marked switchBoxes in the same parent, giving user simple way to make single select choice lists
+  * Shadow styling has been removed, to be replaced later on with full shaders like customizations
+  * Fixed where transparency wasn't propagated properly to transparent layers of text, not obtaining color from layers below
+  * To prevent unnecessary string concatenations GGUI implements its own string_view and string concatenation, these are called:
+  * Since GGUI has a varying and sometimes deeply nested functions of getters, many of them have been made constexpr to hopefully ease inlining and runtime
+  * To prevent weird std::vector behavior and total control in niche use case of it, GGUI now implements its own fastVector for more cache-like behavior between render passes
+  * Added proper scripts for linux and windows side for init, build, export, test and benchmarking with various kinds of tools
+  * GGUI can take now -DGGUI_DEBUG, -DGGUI_RELEASE or -DGGUI_PROFILE, which are automatically managed via the meson build system, but could be manually set for fine control
 
- -- Gabriel Golzar <golzar.gabriel@gmail.com>  Tue, 07 Oct 2025 12:00:00 +0000
+ -- Gabriel Golzar <golzar.gabriel@gmail.com>  Fri, 12 Dec 2025 20:03:51 +0200
+ 
+ggui (0.1.7.5-1) unstable; urgency=medium
+
+  * Updated `Build_Body.cpp` to automatically compile as a single header file.
+  * Update `meson.build` to include AVX support for SIMD.
+  * Overhauled thread scheduler systems for improved task management.
+  * Optimized hitbox updater, job scheduler, and buffer encoder.
+  * Streamlined shadow and opacity processing.
+  * Improved UTF symbol initialization, transitioning from strings to `Compact_String`.
+  * Enhanced styling system by replacing `unordered_maps` with class member access.
+  * Changed RGBA alpha channel from float to unsigned char, optimizing to fit within a 32-bit register.
+  * Secondary threads now avoid spin-locking when paused.
+  * Dedicated a separate thread for the rendering pipeline, preventing conflicts with the main thread.
+  * Refactored sleep functions and fixed lambda capture issues.
+  * Addressed missing default arguments.
+  * Removed OUTBOX from development listings and refined styling merging.
+  * Updated constructors to set element names from strings.
+  * Rewrote the `Text_Field` and `Progress_Bar` classes.
+  * Enhanced `List_View` to re-adjust contents upon resizing.
+  * Ensured GGUI compiles without warnings
+  * Resolved issues with Unix-side key inputs and mouse support.
+  * Improved RGBA alpha channel handling and memory management.
+  * Addressed bugs in key handling and system stability.
+
+ -- Gabriel Golzar <golzar.gabriel@gmail.com>  Fri, 12 Dec 2025 20:06:05 +0200

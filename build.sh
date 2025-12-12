@@ -5,6 +5,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES_DIR="$ROOT_DIR/modules"
 
+# === Source helper scripts ===
+source "$ROOT_DIR/updateChangelog.sh"
+
 # === GPG Sandbox Setup ===
 # Create a temporary directory for the GPG keyring to ensure isolation
 export GNUPGHOME="$(mktemp -d)"
@@ -12,7 +15,7 @@ export GNUPGHOME="$(mktemp -d)"
 trap 'rm -rf "$GNUPGHOME"' EXIT
 
 # Path to the trusted keys file
-KEYS_FILE="$ROOT_DIR/keyring"
+KEYS_FILE="$ROOT_DIR/maintainers.gpg"
 
 # Fail immediately if the keys file is missing
 if [[ ! -f "$KEYS_FILE" ]]; then
@@ -42,6 +45,9 @@ build_module_to_debian() {
         echo ">>> ERROR: GPG signature verification failed for $package_module_path! Stopping build to prevent supply chain attack."
         exit 1
     fi
+
+    echo ">>> Updating changelog for: $package_module_path"
+    update_changelog_for_module "$package_module_path"
 
     echo ">>> Building Debian package for: $package_module_path"
     cd "$package_module_path"
